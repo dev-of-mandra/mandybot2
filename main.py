@@ -387,17 +387,10 @@ async def weekly_purge():
 async def on_message(message):
     if message.author == client.user:
         return
-
     # --- NEW: Respond to mentions ---
     if client.user.mentioned_in(message):
-        # Choose a random response from your GOON_MESSAGES or a new list
-        responses = [
-            "You rang, baws?",
-            "I'm here, what's up baws ?",
-            "Direct orders only, baws.",
-            "Always here baws"
-        ]
-        await message.channel.send(random.choice(responses))
+        sticker = await bot.fetch_sticker(1274672953803669585)
+        await message.channel.send(stickers=[sticker])
 client.run(TOKEN)
 
 
