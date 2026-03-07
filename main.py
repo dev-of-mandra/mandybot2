@@ -284,6 +284,19 @@ async def pillar(interaction: discord.Interaction):
     )
 
 
+# /feedmandra
+@client.tree.command(name="feedmandra", description="Feed the Mandra bot some rock candy!")
+async def feedmandra(interaction: discord.Interaction):
+    if random.randint(1, 10) == 1:
+        await interaction.response.send_message(
+            "you fed it a rock. <:KILL:1471974665252507814>"
+        )
+    else:
+        await interaction.response.send_message(
+            "you fed mandrabot candy! <:mandralove:1474115259659714816>"
+        )
+
+
 # Single on_message handler
 @client.event
 async def on_message(message):
