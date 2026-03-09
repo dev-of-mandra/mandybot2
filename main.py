@@ -243,7 +243,9 @@ async def insult(interaction: discord.Interaction, role: discord.Role):
         if r.id in ROLE_TO_CHANNEL:
             caller_role = r
             break
+
     insult_word = random.choice(INSULTS)
+
     if caller_role is None:
         await interaction.response.send_message("You don't have permission to insult anyone.", ephemeral=True)
         return
@@ -252,18 +254,18 @@ async def insult(interaction: discord.Interaction, role: discord.Role):
         await interaction.response.send_message("That role cannot be insulted.", ephemeral=True)
         return
 
-    if role.id == caller_role.id:
-        await target_channel.send(f"{user.name}, {caller_role.name} called you **{insult_word}**.")
-        await interaction.response.send_message(f"Insult delivered to {target_channel.mention}.", ephemeral=True)
-        return
-
     target_channel_id = ROLE_TO_CHANNEL[role.id]
     target_channel = interaction.guild.get_channel(target_channel_id)
 
     if target_channel is None:
         await interaction.response.send_message("Target channel not found.", ephemeral=True)
         return
-        
+
+    if role.id == caller_role.id:
+        await target_channel.send(f"{interaction.user.name}, you called your own role **{insult_word}**. Embarrassing.")
+        await interaction.response.send_message(f"Insult delivered to {target_channel.mention}.", ephemeral=True)
+        return
+
     await target_channel.send(f"{role.name}, {caller_role.name} called you **{insult_word}**.")
     await interaction.response.send_message(f"Insult delivered to {target_channel.mention}.", ephemeral=True)
 
