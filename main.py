@@ -14,6 +14,7 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 if not TOKEN:
     raise RuntimeError("DISCORD_TOKEN is missing")
 PURGE_CHANNEL_ID = 1346807075153645681
+ORDER_CHANNEL_ID = 1430331529099215031
 DATA_FILE = "dm_blocked.json"
 STONE_FILE = "stone_leaderboard.json"
 HUG_BACKGROUND_URL = (
@@ -42,6 +43,7 @@ GOON_MESSAGES = [
 ]
 
 last_random_send = None
+last_order_message_id = None
 
 ALLOWED_ROLE_IDS = {
     1315105809658544209,
@@ -302,10 +304,19 @@ async def feedmandra(interaction: discord.Interaction):
 # Single on_message handler
 @client.event
 async def on_message(message):
-    global last_random_send
+    global last_random_send, last_order_message_id
 
     if message.author == client.user:
         return
+
+    # Reply "on it baws" if someone replies to the bot's order message
+    if (
+        message.channel.id == ORDER_CHANNEL_ID
+        and message.reference is not None
+        and message.reference.message_id == last_order_message_id
+        and last_order_message_id is not None
+    ):
+        await message.reply("on it baws")
 
     # Respond to mentions with a sticker
     if client.user.mentioned_in(message):
@@ -353,8 +364,20 @@ async def on_message(message):
 
 
 # Weekly purge task
-@tasks.loop(hours=168)
+@tasks.loop(hours=24)
 async def weekly_purge():
+    global last_order_message_id
+
+    # Post "any new orders baws?" in the order channel
+    order_channel = client.get_channel(ORDER_CHANNEL_ID)
+    if order_channel is not None:
+        try:
+            sent = await order_channel.send("any new orders baws ?")
+            last_order_message_id = sent.id
+        except Exception as e:
+            print(f"Failed to send order message: {e}")
+
+    # Purge the blues channel
     channel = client.get_channel(PURGE_CHANNEL_ID)
 
     if channel is None:
