@@ -392,9 +392,9 @@ async def on_message(message):
 async def weekly_purge():
     global last_order_message_id
 
-    # Post "any new orders baws?" in the order channel
+    # Post "any new orders baws?" in the goon channel(gooning)
     order_channel = client.get_channel(ORDER_CHANNEL_ID)
-    if order_channel is not None:
+    if order_channel is not None and (randint(1,5)==4):
         try:
             sent = await order_channel.send("any new orders baws ?")
             last_order_message_id = sent.id
