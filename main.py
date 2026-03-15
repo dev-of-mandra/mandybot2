@@ -22,6 +22,9 @@ HUG_BACKGROUND_URL = (
     "1462490937073729780/Mandra_Hug2.jpeg"
 )
 
+MAKURA_ID = 400140550503923713
+NUKE_TARGET_ID = 644586863881093120
+
 intents = discord.Intents.default()
 intents.message_content = True
 
@@ -137,9 +140,29 @@ ROLE_TO_CHANNEL = {role: channel for channel, role in ROLE_CHANNEL_MAP.items()}
 async def stone(interaction: discord.Interaction, user: discord.User):
     brick_gif = "https://tenor.com/view/cat-throwing-brick-brick-cat-gif-9142560192559212520"
     parry_gif = "https://tenor.com/view/ultrakill-funny-cat-cat-parry-explode-gif-12515622299668151985"
+    nuke_gif = "https://tenor.com/fr/view/cat-brick-nuke-explosion-gif-10450514456976550076"
+    immunity_gif = "https://tenor.com/fr/view/protect-cat-brick-gif-27577142"
 
     stoner_id = str(interaction.user.id)
     target_id = str(user.id)
+
+    # Special immunity for makura
+    if user.id == MAKURA_ID:
+        await interaction.response.send_message(
+            f"makura has been granted stone immunity by the great mandra\n{immunity_gif}",
+            allowed_mentions=discord.AllowedMentions.none()
+        )
+        return
+
+    # Special nuke response for the nuke target
+    if user.id == NUKE_TARGET_ID:
+        client.stone_data[target_id] = client.stone_data.get(target_id, 0) + 1
+        save_stone_data(client.stone_data)
+        await interaction.response.send_message(
+            f"{interaction.user.name} stones {user.name}\n{nuke_gif}",
+            allowed_mentions=discord.AllowedMentions.none()
+        )
+        return
 
     if random.choice([True, False]):
         client.stone_data[target_id] = client.stone_data.get(target_id, 0) + 1
@@ -270,6 +293,7 @@ async def insult(interaction: discord.Interaction, role: discord.Role):
 
     await target_channel.send(f"{role.name}, {caller_role.name} called you **{insult_word}**.")
     await interaction.response.send_message(f"Insult delivered to {target_channel.mention}.", ephemeral=True)
+
 
 
 # /mandrapet
