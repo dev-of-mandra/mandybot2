@@ -140,8 +140,8 @@ ROLE_TO_CHANNEL = {role: channel for channel, role in ROLE_CHANNEL_MAP.items()}
 async def stone(interaction: discord.Interaction, user: discord.User):
     brick_gif = "https://tenor.com/view/cat-throwing-brick-brick-cat-gif-9142560192559212520"
     parry_gif = "https://tenor.com/view/ultrakill-funny-cat-cat-parry-explode-gif-12515622299668151985"
-    nuke_gif = "https://tenor.com/fr/view/cat-brick-nuke-explosion-gif-10450514456976550076"
-    immunity_gif = "https://tenor.com/fr/view/protect-cat-brick-gif-27577142"
+    nuke_gif = "https://tenor.com/mB9C7DzBBge.gif"
+    immunity_gif = "https://tenor.com/b1SeM.gif"
 
     stoner_id = str(interaction.user.id)
     target_id = str(user.id)
