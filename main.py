@@ -10,6 +10,7 @@ from discord.ext import tasks
 from PIL import Image, ImageDraw
 import aiohttp
 import io
+#git has been added finally
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 if not TOKEN:
@@ -389,18 +390,19 @@ async def on_message(message):
 
 
 # Weekly purge task
-@tasks.loop(hours=24)
-async def weekly_purge():
-    global last_order_message_id
+
+#@tasks.loop(hours=24)
+#async def weekly_purge():
+    #global last_order_message_id
 
     # Post "any new orders baws?" in the goon channel(gooning)
-    order_channel = client.get_channel(ORDER_CHANNEL_ID)
-    if order_channel is not None and (randint(1,5)==4):
-        try:
-            sent = await order_channel.send("any new orders baws ?")
-            last_order_message_id = sent.id
-        except Exception as e:
-            print(f"Failed to send order message: {e}")
+    #order_channel = client.get_channel(ORDER_CHANNEL_ID)
+    #if order_channel is not None and (randint(1,5)==4):
+        #try:
+            #sent = await order_channel.send("any new orders baws ?")
+            #last_order_message_id = sent.id
+        #except Exception as e:
+            #print(f"Failed to send order message: {e}")
 
     # Purge the blues channel
     channel = client.get_channel(PURGE_CHANNEL_ID)
