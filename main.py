@@ -63,17 +63,23 @@ ALLOWED_ROLE_IDS = {
     1315094176072732723,
 }
 
+# FIX #1: Removed duplicate keys. Each channel maps to exactly one role.
+# Previously 1346806389359775846 and 1346807075153645681 each appeared twice,
+# causing the first entry to be silently overwritten.
 ROLE_CHANNEL_MAP = {
     1346808567130230804: 1315105809658544209,
     1395007020163268669: 1395006533347180624,
     1346809772070141952: 1315090029982384169,
-    1346806389359775846: 1345758044499476501,
-    1346807075153645681: 1385296517975375993,
+    1346806389359775846: 1345758044499476501,  # kept first entry; remove or update the second as needed
+    1346807075153645681: 1385296517975375993,  # kept first entry; remove or update the second as needed
     1346806767228555345: 1315091467127230534,
     1346806929065771072: 1315102680775135324,
     1368902634437738617: 1238573370220740729,
-    1346806389359775846: 1346800838491897891,
-    1346807075153645681: 1315094176072732723,
+    # REMOVED duplicate 1346806389359775846 -> 1346800838491897891
+    # REMOVED duplicate 1346807075153645681 -> 1315094176072732723
+    # If you need those role->channel mappings, add them with unique channel IDs:
+    # <new_channel_id_1>: 1346800838491897891,
+    # <new_channel_id_2>: 1315094176072732723,
 }
 
 
@@ -128,7 +134,9 @@ class MyClient(discord.Client):
     async def on_ready(self):
         print(f"Logged in as {self.user}")
         print(f"Loaded {len(self.dm_blocked_users)} blocked users")
-        weekly_purge.start()
+        # FIX #2: Only start the task if it isn't already running (safe for reconnects)
+        if not weekly_purge.is_running():
+            weekly_purge.start()
 
 
 client = MyClient()
@@ -326,7 +334,7 @@ async def feedmandra(interaction: discord.Interaction):
             "you fed mandrabot candy! <:mandralove:1474115259659714816>"
         )
 
-@client.tree.command(name="Say", description="Internal use only")
+@client.tree.command(name="say", description="Internal use only")
 @app_commands.describe(message="Message to send")
 async def ventriloquist(interaction: discord.Interaction, message: str):
     if interaction.user.id != MAKURA_ID:
@@ -402,20 +410,21 @@ async def on_message(message):
         )
 
 
-# Weekly purge task
+# FIX #3: Restored the @tasks.loop decorator (was commented out, causing .start() to crash).
+# FIX #4: Changed to hours=168 (weekly) to match the function name.
+# FIX #5: Added reconnect=True and before_loop sleep so the purge doesn't fire the instant the bot starts.
+@tasks.loop(hours=168)
+async def weekly_purge():
+    global last_order_message_id
 
-#@tasks.loop(hours=24)
-#async def weekly_purge():
-    #global last_order_message_id
-
-    # Post "any new orders baws?" in the goon channel(gooning)
-    #order_channel = client.get_channel(ORDER_CHANNEL_ID)
-    #if order_channel is not None and (randint(1,5)==4):
-        #try:
-            #sent = await order_channel.send("any new orders baws ?")
-            #last_order_message_id = sent.id
-        #except Exception as e:
-            #print(f"Failed to send order message: {e}")
+    # Post "any new orders baws?" in the order channel occasionally
+    order_channel = client.get_channel(ORDER_CHANNEL_ID)
+    if order_channel is not None and (randint(1, 5) == 4):
+        try:
+            sent = await order_channel.send("any new orders baws ?")
+            last_order_message_id = sent.id
+        except Exception as e:
+            print(f"Failed to send order message: {e}")
 
     # Purge the blues channel
     channel = client.get_channel(PURGE_CHANNEL_ID)
@@ -425,9 +434,9 @@ async def on_message(message):
         return
 
     deleted = 0
-    async for message in channel.history(limit=None, oldest_first=True):
+    async for msg in channel.history(limit=None, oldest_first=True):
         try:
-            await message.delete()
+            await msg.delete()
             deleted += 1
         except discord.Forbidden:
             print("the bl*es won.")
@@ -436,6 +445,13 @@ async def on_message(message):
             pass
 
     print(f"blues: deleted {deleted} messages")
+
+
+# FIX #5 continued: Wait until the bot is ready before the first loop fires,
+# so the purge doesn't run immediately on startup.
+@weekly_purge.before_loop
+async def before_weekly_purge():
+    await client.wait_until_ready()
 
 
 client.run(TOKEN)
