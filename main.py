@@ -26,6 +26,7 @@ HUG_BACKGROUND_URL = (
 
 MAKURA_ID = 400140550503923713
 NUKE_TARGET_ID = 644586863881093120
+SAY_CHANNEL_ID = 1205588718774263860
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -63,23 +64,15 @@ ALLOWED_ROLE_IDS = {
     1315094176072732723,
 }
 
-# FIX #1: Removed duplicate keys. Each channel maps to exactly one role.
-# Previously 1346806389359775846 and 1346807075153645681 each appeared twice,
-# causing the first entry to be silently overwritten.
 ROLE_CHANNEL_MAP = {
     1346808567130230804: 1315105809658544209,
     1395007020163268669: 1395006533347180624,
     1346809772070141952: 1315090029982384169,
-    1346806389359775846: 1345758044499476501,  # kept first entry; remove or update the second as needed
-    1346807075153645681: 1385296517975375993,  # kept first entry; remove or update the second as needed
+    1346806389359775846: 1345758044499476501,
+    1346807075153645681: 1385296517975375993,
     1346806767228555345: 1315091467127230534,
     1346806929065771072: 1315102680775135324,
     1368902634437738617: 1238573370220740729,
-    # REMOVED duplicate 1346806389359775846 -> 1346800838491897891
-    # REMOVED duplicate 1346807075153645681 -> 1315094176072732723
-    # If you need those role->channel mappings, add them with unique channel IDs:
-    # <new_channel_id_1>: 1346800838491897891,
-    # <new_channel_id_2>: 1315094176072732723,
 }
 
 
@@ -134,7 +127,6 @@ class MyClient(discord.Client):
     async def on_ready(self):
         print(f"Logged in as {self.user}")
         print(f"Loaded {len(self.dm_blocked_users)} blocked users")
-        # FIX #2: Only start the task if it isn't already running (safe for reconnects)
         if not weekly_purge.is_running():
             weekly_purge.start()
 
@@ -156,7 +148,6 @@ async def stone(interaction: discord.Interaction, user: discord.User):
     stoner_id = str(interaction.user.id)
     target_id = str(user.id)
 
-    # Special immunity for makura
     if user.id == MAKURA_ID:
         await interaction.response.send_message(
             f"makura has been granted stone immunity by the great mandra\n{immunity_gif}",
@@ -164,7 +155,6 @@ async def stone(interaction: discord.Interaction, user: discord.User):
         )
         return
 
-    # Special nuke response for the nuke target
     if user.id == NUKE_TARGET_ID:
         client.stone_data[target_id] = client.stone_data.get(target_id, 0) + 1
         save_stone_data(client.stone_data)
@@ -305,7 +295,6 @@ async def insult(interaction: discord.Interaction, role: discord.Role):
     await interaction.response.send_message(f"Insult delivered to {target_channel.mention}.", ephemeral=True)
 
 
-
 # /mandrapet
 @client.tree.command(name="mandrapet", description="mandra pet")
 async def mandrapet(interaction: discord.Interaction):
@@ -334,18 +323,24 @@ async def feedmandra(interaction: discord.Interaction):
             "you fed mandrabot candy! <:mandralove:1474115259659714816>"
         )
 
+
+# /say
 @client.tree.command(name="say", description="Internal use only")
 @app_commands.describe(message="Message to send")
 async def ventriloquist(interaction: discord.Interaction, message: str):
     if interaction.user.id != MAKURA_ID:
         await interaction.response.send_message("Mandrabot resists your attempt at mind control.", ephemeral=True)
         return
-    
+
     await interaction.response.defer(ephemeral=True)
-    
-    if interaction.channel:
-        await interaction.channel.send(message, allowed_mentions=discord.AllowedMentions.none())
-        await interaction.followup.send("Message sent.", ephemeral=True)
+
+    target_channel = client.get_channel(SAY_CHANNEL_ID)
+    if target_channel is None:
+        await interaction.followup.send("Target channel not found.", ephemeral=True)
+        return
+
+    await target_channel.send(message, allowed_mentions=discord.AllowedMentions.none())
+    await interaction.followup.send("Message sent.", ephemeral=True)
 
 
 # Single on_message handler
@@ -356,7 +351,6 @@ async def on_message(message):
     if message.author == client.user:
         return
 
-    # Reply "on it baws" if someone replies to the bot's order message
     if (
         message.channel.id == ORDER_CHANNEL_ID
         and message.reference is not None
@@ -365,7 +359,6 @@ async def on_message(message):
     ):
         await message.reply("on it baws")
 
-    # Respond to mentions with a sticker
     if client.user.mentioned_in(message):
         sticker = await client.fetch_sticker(1274672953803669585)
         await message.channel.send(stickers=[sticker])
@@ -410,14 +403,10 @@ async def on_message(message):
         )
 
 
-# FIX #3: Restored the @tasks.loop decorator (was commented out, causing .start() to crash).
-# FIX #4: Changed to hours=168 (weekly) to match the function name.
-# FIX #5: Added reconnect=True and before_loop sleep so the purge doesn't fire the instant the bot starts.
 @tasks.loop(hours=168)
 async def weekly_purge():
     global last_order_message_id
 
-    # Post "any new orders baws?" in the order channel occasionally
     order_channel = client.get_channel(ORDER_CHANNEL_ID)
     if order_channel is not None and (randint(1, 5) == 4):
         try:
@@ -426,7 +415,6 @@ async def weekly_purge():
         except Exception as e:
             print(f"Failed to send order message: {e}")
 
-    # Purge the blues channel
     channel = client.get_channel(PURGE_CHANNEL_ID)
 
     if channel is None:
@@ -447,8 +435,6 @@ async def weekly_purge():
     print(f"blues: deleted {deleted} messages")
 
 
-# FIX #5 continued: Wait until the bot is ready before the first loop fires,
-# so the purge doesn't run immediately on startup.
 @weekly_purge.before_loop
 async def before_weekly_purge():
     await client.wait_until_ready()
