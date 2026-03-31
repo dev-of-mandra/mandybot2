@@ -326,6 +326,19 @@ async def feedmandra(interaction: discord.Interaction):
             "you fed mandrabot candy! <:mandralove:1474115259659714816>"
         )
 
+@client.tree.command(name="Say", description="Internal use only")
+@app_commands.describe(message="Message to send")
+async def ventriloquist(interaction: discord.Interaction, message: str):
+    if interaction.user.id != MAKURA_ID:
+        await interaction.response.send_message("Mandrabot resists your attempt at mind control.", ephemeral=True)
+        return
+    
+    await interaction.response.defer(ephemeral=True)
+    
+    if interaction.channel:
+        await interaction.channel.send(message, allowed_mentions=discord.AllowedMentions.none())
+        await interaction.followup.send("Message sent.", ephemeral=True)
+
 
 # Single on_message handler
 @client.event
