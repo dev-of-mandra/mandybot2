@@ -360,8 +360,17 @@ async def on_message(message):
         await message.reply("on it baws")
 
     if client.user.mentioned_in(message):
-        sticker = await client.fetch_sticker(1274672953803669585)
-        await message.channel.send(stickers=[sticker])
+        roll = random.randint(1, 10)
+        if roll <= 5:
+            sticker = await client.fetch_sticker(1274672953803669585)
+            await message.channel.send(stickers=[sticker])
+        elif roll <= 9:
+            await message.channel.send("quit it you cunt <:mandranope:1471974665252507814>")
+        else:
+            try:
+                await message.author.send("i'll kill you in your sleep")
+            except discord.Forbidden:
+                pass
 
     if message.author.id == 644586863881093120:
         if random.randint(1, 100) == 1:
