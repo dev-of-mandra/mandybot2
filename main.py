@@ -365,7 +365,7 @@ async def on_message(message):
             sticker = await client.fetch_sticker(1274672953803669585)
             await message.channel.send(stickers=[sticker])
         elif roll <= 9:
-            await message.channel.send("quit it you cunt <:mandranope:1471974665252507814>")
+            await message.channel.send("cunt")
         else:
             try:
                 await message.author.send("i'll kill you in your sleep")
