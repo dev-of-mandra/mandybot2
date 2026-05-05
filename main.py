@@ -25,6 +25,7 @@ HUG_BACKGROUND_URL = (
 )
 
 MAKURA_ID = 400140550503923713
+TALOGNE_ID = 
 NUKE_TARGET_ID = 644586863881093120
 SAY_CHANNEL_ID = 1205588718774263860
 
@@ -331,7 +332,7 @@ async def feedmandra(interaction: discord.Interaction):
 @client.tree.command(name="say", description="Internal use only")
 @app_commands.describe(message="Message to send")
 async def ventriloquist(interaction: discord.Interaction, message: str):
-    if interaction.user.id != MAKURA_ID:
+    if (interaction.user.id != MAKURA_ID) and (interaction.user.id != TALOGNE_ID):
         await interaction.response.send_message("Mandrabot resists your attempt at mind control.", ephemeral=True)
         return
 
